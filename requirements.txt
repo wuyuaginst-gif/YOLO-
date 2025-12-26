@@ -1,0 +1,5 @@
+fastapi
+uvicorn[standard]
+ultralytics
+Pillow
+python-multipart  # 用于处理文件上传
