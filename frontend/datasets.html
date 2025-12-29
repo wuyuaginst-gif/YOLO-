@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据集管理 - OpenCV Platform</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="/" class="navbar-brand">🎯 OpenCV Platform</a>
+            <ul class="navbar-nav">
+                <li><a href="/" class="nav-link">首页</a></li>
+                <li><a href="/inference" class="nav-link">模型推理</a></li>
+                <li><a href="/training" class="nav-link">模型训练</a></li>
+                <li><a href="/models" class="nav-link">模型管理</a></li>
+                <li><a href="/datasets" class="nav-link active">数据集</a></li>
+                <li><a href="/labelstudio" class="nav-link">数据标注</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="card">
+            <div class="card-header">📁 数据集列表</div>
+            <div id="datasets-list">
+                <p>加载中...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/api.js"></script>
+    <script>
+        async function loadDatasets() {
+            try {
+                const data = await API.listDatasets();
+                const datasetsList = document.getElementById('datasets-list');
+                
+                if (data.datasets && data.datasets.length > 0) {
+                    datasetsList.innerHTML = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>名称</th>
+                                    <th>图片数量</th>
+                                    <th>类别数量</th>
+                                    <th>类别</th>
+                                    <th>创建时间</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.datasets.map(ds => `
+                                    <tr>
+                                        <td>${ds.name}</td>
+                                        <td>${ds.num_images}</td>
+                                        <td>${ds.num_classes}</td>
+                                        <td>${ds.classes.join(', ')}</td>
+                                        <td>${formatDate(ds.created_at)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                } else {
+                    datasetsList.innerHTML = '<p style="color: var(--secondary-color);">暂无数据集</p>';
+                }
+            } catch (error) {
+                console.error('Failed to load datasets:', error);
+            }
+        }
+
+        loadDatasets();
+    </script>
+</body>
+</html>

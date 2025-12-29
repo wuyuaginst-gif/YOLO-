@@ -1,5 +1,21 @@
-fastapi
-uvicorn[standard]
-ultralytics
-Pillow
-python-multipart  # 用于处理文件上传
+# Web 框架
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.6
+jinja2>=3.1.2
+
+# 计算机视觉
+ultralytics>=8.0.0
+opencv-python>=4.8.0
+Pillow>=10.0.0
+
+# 数据处理
+numpy>=1.24.0
+pyyaml>=6.0
+
+# HTTP 请求
+requests>=2.31.0
+
+# 可选：数据库支持（未来扩展）
+# sqlalchemy>=2.0.0
+# alembic>=1.12.0

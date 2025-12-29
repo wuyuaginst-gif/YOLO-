@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模型管理 - OpenCV Platform</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="/" class="navbar-brand">🎯 OpenCV Platform</a>
+            <ul class="navbar-nav">
+                <li><a href="/" class="nav-link">首页</a></li>
+                <li><a href="/inference" class="nav-link">模型推理</a></li>
+                <li><a href="/training" class="nav-link">模型训练</a></li>
+                <li><a href="/models" class="nav-link active">模型管理</a></li>
+                <li><a href="/datasets" class="nav-link">数据集</a></li>
+                <li><a href="/labelstudio" class="nav-link">数据标注</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="card">
+            <div class="card-header">📦 模型列表</div>
+            <div id="models-list">
+                <p>加载中...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/api.js"></script>
+    <script>
+        async function loadModels() {
+            try {
+                const models = await API.listModels();
+                const modelsList = document.getElementById('models-list');
+                
+                if (models.length > 0) {
+                    modelsList.innerHTML = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>模型名称</th>
+                                    <th>类型</th>
+                                    <th>任务</th>
+                                    <th>大小</th>
+                                    <th>创建时间</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${models.map(model => `
+                                    <tr>
+                                        <td>${model.name}</td>
+                                        <td>${model.model_type}</td>
+                                        <td>${model.task}</td>
+                                        <td>${formatBytes(model.size)}</td>
+                                        <td>${formatDate(model.created_at)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                } else {
+                    modelsList.innerHTML = '<p style="color: var(--secondary-color);">暂无模型</p>';
+                }
+            } catch (error) {
+                console.error('Failed to load models:', error);
+            }
+        }
+
+        loadModels();
+    </script>
+</body>
+</html>

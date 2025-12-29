@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # OpenCV Platform 主服务
+  opencv-platform:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: opencv-platform
+    ports:
+      - "8000:8000"
+    volumes:
+      # 挂载数据目录（持久化）
+      - ./data:/app/data
+      # 挂载配置文件
+      - ./.env:/app/.env:ro
+    environment:
+      - APP_NAME=OpenCV Platform
+      - APP_VERSION=1.0.0
+      - DEBUG=True
+      - API_PORT=8000
+      - LABEL_STUDIO_URL=http://labelstudio:8080
+    networks:
+      - opencv-network
+    restart: unless-stopped
+    depends_on:
+      - labelstudio
+
+  # Label Studio 标注服务
+  labelstudio:
+    image: heartexlabs/label-studio:latest
+    container_name: labelstudio
+    ports:
+      - "8080:8080"
+    volumes:
+      # Label Studio 数据持久化
+      - labelstudio-data:/label-studio/data
+    environment:
+      - LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED=true
+      - LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT=/label-studio/data
+    networks:
+      - opencv-network
+    restart: unless-stopped
+
+volumes:
+  labelstudio-data:
+    driver: local
+
+networks:
+  opencv-network:
+    driver: bridge

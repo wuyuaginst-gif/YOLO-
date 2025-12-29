@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模型训练 - OpenCV Platform</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="/" class="navbar-brand">🎯 OpenCV Platform</a>
+            <ul class="navbar-nav">
+                <li><a href="/" class="nav-link">首页</a></li>
+                <li><a href="/inference" class="nav-link">模型推理</a></li>
+                <li><a href="/training" class="nav-link active">模型训练</a></li>
+                <li><a href="/models" class="nav-link">模型管理</a></li>
+                <li><a href="/datasets" class="nav-link">数据集</a></li>
+                <li><a href="/labelstudio" class="nav-link">数据标注</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="card">
+            <div class="card-header">🚀 模型训练</div>
+            
+            <form id="training-form">
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label class="form-label">项目名称</label>
+                        <input type="text" id="project-name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">数据集路径</label>
+                        <input type="text" id="dataset-path" class="form-control" placeholder="data/datasets/my_dataset/data.yaml" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">模型类型</label>
+                        <select id="model-type" class="form-control">
+                            <option value="yolov8n">YOLOv8n</option>
+                            <option value="yolov8s">YOLOv8s</option>
+                            <option value="yolov8m">YOLOv8m</option>
+                            <option value="yolov8l">YOLOv8l</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">训练轮数</label>
+                        <input type="number" id="epochs" class="form-control" value="100" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">批次大小</label>
+                        <input type="number" id="batch-size" class="form-control" value="16" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">图像尺寸</label>
+                        <input type="number" id="img-size" class="form-control" value="640" min="320" step="32">
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">开始训练</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-header">📋 训练任务</div>
+            <div id="tasks-list">
+                <p style="color: var(--secondary-color);">暂无训练任务</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/api.js"></script>
+    <script>
+        document.getElementById('training-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const config = {
+                project_name: document.getElementById('project-name').value,
+                dataset_path: document.getElementById('dataset-path').value,
+                model_type: document.getElementById('model-type').value,
+                epochs: parseInt(document.getElementById('epochs').value),
+                batch_size: parseInt(document.getElementById('batch-size').value),
+                img_size: parseInt(document.getElementById('img-size').value),
+                device: 'cpu'
+            };
+
+            try {
+                const result = await API.startTraining(config);
+                if (result.success) {
+                    showAlert('训练任务已启动: ' + result.task_id, 'success');
+                    loadTasks();
+                } else {
+                    showAlert('启动失败', 'danger');
+                }
+            } catch (error) {
+                showAlert('错误: ' + error.message, 'danger');
+            }
+        });
+
+        async function loadTasks() {
+            try {
+                const data = await API.listTrainingTasks();
+                const tasksList = document.getElementById('tasks-list');
+                
+                if (data.tasks && data.tasks.length > 0) {
+                    tasksList.innerHTML = data.tasks.map(task => `
+                        <div class="card" style="margin-bottom: 1rem;">
+                            <h4>${task.task_id}</h4>
+                            <span class="badge badge-${task.status === 'completed' ? 'success' : task.status === 'failed' ? 'danger' : 'warning'}">
+                                ${task.status}
+                            </span>
+                            <div class="progress" style="margin-top: 0.5rem;">
+                                <div class="progress-bar" style="width: ${task.progress}%">${task.progress.toFixed(0)}%</div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Failed to load tasks:', error);
+            }
+        }
+
+        loadTasks();
+        setInterval(loadTasks, 5000);
+    </script>
+</body>
+</html>

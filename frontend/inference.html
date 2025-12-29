@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模型推理 - OpenCV Platform</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="/" class="navbar-brand">🎯 OpenCV Platform</a>
+            <ul class="navbar-nav">
+                <li><a href="/" class="nav-link">首页</a></li>
+                <li><a href="/inference" class="nav-link active">模型推理</a></li>
+                <li><a href="/training" class="nav-link">模型训练</a></li>
+                <li><a href="/models" class="nav-link">模型管理</a></li>
+                <li><a href="/datasets" class="nav-link">数据集</a></li>
+                <li><a href="/labelstudio" class="nav-link">数据标注</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="card">
+            <div class="card-header">🔍 模型推理</div>
+            
+            <!-- 配置选项 -->
+            <div class="grid grid-3">
+                <div class="form-group">
+                    <label class="form-label">模型选择</label>
+                    <select id="model-select" class="form-control">
+                        <option value="yolov8n.pt">YOLOv8n (nano)</option>
+                        <option value="yolov8s.pt">YOLOv8s (small)</option>
+                        <option value="yolov8m.pt">YOLOv8m (medium)</option>
+                        <option value="yolov8l.pt">YOLOv8l (large)</option>
+                        <option value="yolov8x.pt">YOLOv8x (extra large)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">置信度阈值</label>
+                    <input type="number" id="confidence" class="form-control" min="0" max="1" step="0.05" value="0.25">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">IOU 阈值</label>
+                    <input type="number" id="iou" class="form-control" min="0" max="1" step="0.05" value="0.45">
+                </div>
+            </div>
+
+            <!-- 文件上传区域 -->
+            <div class="upload-area" id="upload-area">
+                <h3>📁 点击或拖拽上传图片</h3>
+                <p style="color: var(--secondary-color);">支持 JPG、PNG、BMP 格式</p>
+                <input type="file" id="file-input" accept="image/*" style="display: none;">
+            </div>
+
+            <!-- 操作按钮 -->
+            <div style="margin-top: 1rem; display: flex; gap: 1rem;">
+                <button class="btn btn-primary" id="infer-btn" disabled>
+                    开始推理
+                </button>
+                <button class="btn btn-secondary" id="clear-btn">
+                    清除结果
+                </button>
+            </div>
+        </div>
+
+        <!-- 推理结果 -->
+        <div id="results-container" style="display: none;">
+            <div class="card">
+                <div class="card-header">📊 推理结果</div>
+                
+                <div class="grid grid-2">
+                    <!-- 图片预览 -->
+                    <div>
+                        <h4 style="margin-bottom: 1rem;">原始图片</h4>
+                        <canvas id="result-canvas" style="max-width: 100%; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></canvas>
+                    </div>
+
+                    <!-- 检测信息 -->
+                    <div>
+                        <h4 style="margin-bottom: 1rem;">检测信息</h4>
+                        <div style="background: var(--light-color); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                            <p><strong>推理时间:</strong> <span id="inference-time">-</span> ms</p>
+                            <p><strong>图片尺寸:</strong> <span id="image-size">-</span></p>
+                            <p><strong>检测数量:</strong> <span id="detection-count">-</span></p>
+                        </div>
+
+                        <h4 style="margin-bottom: 0.5rem;">检测对象</h4>
+                        <div id="detections-list" style="max-height: 400px; overflow-y: auto;">
+                            <!-- 检测结果列表 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/api.js"></script>
+    <script>
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const inferBtn = document.getElementById('infer-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const resultsContainer = document.getElementById('results-container');
+        const canvas = document.getElementById('result-canvas');
+        const ctx = canvas.getContext('2d');
+
+        let currentFile = null;
+
+        // 上传区域点击
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        // 文件选择
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                currentFile = file;
+                inferBtn.disabled = false;
+                uploadArea.innerHTML = `<h3>✓ 已选择: ${file.name}</h3>`;
+            }
+        });
+
+        // 拖拽上传
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('drag-over');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                currentFile = file;
+                inferBtn.disabled = false;
+                uploadArea.innerHTML = `<h3>✓ 已选择: ${file.name}</h3>`;
+            }
+        });
+
+        // 开始推理
+        inferBtn.addEventListener('click', async () => {
+            if (!currentFile) return;
+
+            inferBtn.disabled = true;
+            inferBtn.innerHTML = '<span class="loading"></span> 推理中...';
+
+            try {
+                const options = {
+                    model_name: document.getElementById('model-select').value,
+                    confidence: parseFloat(document.getElementById('confidence').value),
+                    iou_threshold: parseFloat(document.getElementById('iou').value)
+                };
+
+                const result = await API.inferImage(currentFile, options);
+
+                if (result.success) {
+                    displayResults(result, currentFile);
+                    showAlert('推理完成!', 'success');
+                } else {
+                    showAlert('推理失败: ' + result.message, 'danger');
+                }
+            } catch (error) {
+                showAlert('推理出错: ' + error.message, 'danger');
+            } finally {
+                inferBtn.disabled = false;
+                inferBtn.textContent = '开始推理';
+            }
+        });
+
+        // 显示结果
+        function displayResults(result, file) {
+            resultsContainer.style.display = 'block';
+
+            // 显示推理信息
+            document.getElementById('inference-time').textContent = (result.inference_time * 1000).toFixed(2);
+            document.getElementById('image-size').textContent = `${result.image_shape[1]} × ${result.image_shape[0]}`;
+            document.getElementById('detection-count').textContent = result.detections.length;
+
+            // 绘制图片和检测框
+            const img = new Image();
+            img.onload = () => {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+
+                // 绘制检测框
+                result.detections.forEach((det, idx) => {
+                    const [x1, y1, x2, y2] = det.bbox;
+                    const color = getColor(idx);
+
+                    // 绘制矩形框
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+
+                    // 绘制标签背景
+                    const label = `${det.class_name} ${(det.confidence * 100).toFixed(1)}%`;
+                    ctx.font = '16px Arial';
+                    const textWidth = ctx.measureText(label).width;
+                    
+                    ctx.fillStyle = color;
+                    ctx.fillRect(x1, y1 - 25, textWidth + 10, 25);
+
+                    // 绘制标签文字
+                    ctx.fillStyle = 'white';
+                    ctx.fillText(label, x1 + 5, y1 - 7);
+                });
+            };
+            img.src = URL.createObjectURL(file);
+
+            // 显示检测列表
+            const detectionsList = document.getElementById('detections-list');
+            detectionsList.innerHTML = result.detections.map((det, idx) => `
+                <div class="detection-item" style="border-left: 4px solid ${getColor(idx)};">
+                    <strong>${det.class_name}</strong>
+                    <span class="badge badge-primary" style="float: right;">${(det.confidence * 100).toFixed(1)}%</span>
+                    <br>
+                    <small style="color: var(--secondary-color);">
+                        坐标: [${det.bbox.map(v => v.toFixed(1)).join(', ')}]
+                    </small>
+                </div>
+            `).join('');
+        }
+
+        // 清除结果
+        clearBtn.addEventListener('click', () => {
+            resultsContainer.style.display = 'none';
+            currentFile = null;
+            fileInput.value = '';
+            inferBtn.disabled = true;
+            uploadArea.innerHTML = '<h3>📁 点击或拖拽上传图片</h3><p style="color: var(--secondary-color);">支持 JPG、PNG、BMP 格式</p>';
+        });
+
+        // 获取颜色
+        function getColor(index) {
+            const colors = [
+                '#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+                '#06b6d4', '#ec4899', '#14b8a6', '#f97316', '#6366f1'
+            ];
+            return colors[index % colors.length];
+        }
+    </script>
+</body>
+</html>

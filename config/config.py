@@ -1,0 +1,65 @@
+"""
+配置管理模块
+"""
+import os
+from pathlib import Path
+from typing import List
+
+# 基础路径
+BASE_DIR = Path(__file__).resolve().parent.parent
+DATA_DIR = BASE_DIR / "data"
+DATASETS_DIR = DATA_DIR / "datasets"
+MODELS_DIR = DATA_DIR / "models"
+EXPORTS_DIR = DATA_DIR / "exports"
+UPLOADS_DIR = DATA_DIR / "uploads"
+
+# 确保目录存在
+for directory in [DATA_DIR, DATASETS_DIR, MODELS_DIR, EXPORTS_DIR, UPLOADS_DIR]:
+    directory.mkdir(parents=True, exist_ok=True)
+
+
+class Settings:
+    """应用配置"""
+    
+    # 应用信息
+    APP_NAME: str = os.getenv("APP_NAME", "OpenCV Platform")
+    APP_VERSION: str = os.getenv("APP_VERSION", "1.0.0")
+    DEBUG: bool = os.getenv("DEBUG", "True").lower() == "true"
+    
+    # 服务端口
+    API_PORT: int = int(os.getenv("API_PORT", "8000"))
+    LABEL_STUDIO_PORT: int = int(os.getenv("LABEL_STUDIO_PORT", "8080"))
+    
+    # Label Studio 配置
+    LABEL_STUDIO_URL: str = os.getenv("LABEL_STUDIO_URL", "http://localhost:8080")
+    LABEL_STUDIO_API_KEY: str = os.getenv("LABEL_STUDIO_API_KEY", "")
+    
+    # 路径配置
+    DATA_DIR: Path = DATA_DIR
+    DATASETS_DIR: Path = DATASETS_DIR
+    MODELS_DIR: Path = MODELS_DIR
+    EXPORTS_DIR: Path = EXPORTS_DIR
+    UPLOADS_DIR: Path = UPLOADS_DIR
+    
+    # 模型配置
+    DEFAULT_MODEL: str = os.getenv("DEFAULT_MODEL", "yolov8n.pt")
+    CONFIDENCE_THRESHOLD: float = float(os.getenv("CONFIDENCE_THRESHOLD", "0.25"))
+    IOU_THRESHOLD: float = float(os.getenv("IOU_THRESHOLD", "0.45"))
+    
+    # 训练配置
+    DEFAULT_EPOCHS: int = int(os.getenv("DEFAULT_EPOCHS", "100"))
+    DEFAULT_BATCH_SIZE: int = int(os.getenv("DEFAULT_BATCH_SIZE", "16"))
+    DEFAULT_IMG_SIZE: int = int(os.getenv("DEFAULT_IMG_SIZE", "640"))
+    
+    # API 配置
+    MAX_UPLOAD_SIZE: int = int(os.getenv("MAX_UPLOAD_SIZE", "50")) * 1024 * 1024  # 转换为字节
+    ALLOWED_EXTENSIONS: List[str] = os.getenv(
+        "ALLOWED_EXTENSIONS", 
+        "jpg,jpeg,png,bmp,mp4,avi,mov"
+    ).split(",")
+    
+    # CORS 配置
+    CORS_ORIGINS: List[str] = ["*"]  # 生产环境应该限制具体域名
+
+
+settings = Settings()

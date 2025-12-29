@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenCV Platform - 开源计算机视觉平台</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="/" class="navbar-brand">🎯 OpenCV Platform</a>
+            <ul class="navbar-nav">
+                <li><a href="/" class="nav-link active">首页</a></li>
+                <li><a href="/inference" class="nav-link">模型推理</a></li>
+                <li><a href="/training" class="nav-link">模型训练</a></li>
+                <li><a href="/models" class="nav-link">模型管理</a></li>
+                <li><a href="/datasets" class="nav-link">数据集</a></li>
+                <li><a href="/labelstudio" class="nav-link">数据标注</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="card">
+            <h1 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+                🚀 欢迎使用 OpenCV Platform
+            </h1>
+            <p style="text-align: center; font-size: 1.1rem; color: var(--secondary-color); margin-bottom: 2rem;">
+                基于 Ultralytics YOLO 的开源计算机视觉平台<br>
+                提供数据标注、模型训练、API 部署的完整工作流
+            </p>
+        </div>
+
+        <!-- 系统信息 -->
+        <div class="card">
+            <div class="card-header">📊 系统信息</div>
+            <div id="system-info" class="grid grid-4">
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-models">-</div>
+                    <div class="stat-label">模型数量</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #10b981, #34d399);">
+                    <div class="stat-value" id="stat-datasets">-</div>
+                    <div class="stat-label">数据集数量</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #f59e0b, #fbbf24);">
+                    <div class="stat-value" id="stat-gpu">-</div>
+                    <div class="stat-label">GPU 状态</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #8b5cf6, #a78bfa);">
+                    <div class="stat-value" id="stat-version">-</div>
+                    <div class="stat-label">YOLO 版本</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 快速开始 -->
+        <div class="card">
+            <div class="card-header">🎯 快速开始</div>
+            <div class="grid grid-3">
+                <div>
+                    <h3 style="margin-bottom: 0.5rem;">1️⃣ 数据标注</h3>
+                    <p style="color: var(--secondary-color); margin-bottom: 1rem;">
+                        使用 Label Studio 进行数据标注，支持目标检测、图像分割等任务
+                    </p>
+                    <a href="/labelstudio" class="btn btn-primary">开始标注</a>
+                </div>
+                <div>
+                    <h3 style="margin-bottom: 0.5rem;">2️⃣ 模型训练</h3>
+                    <p style="color: var(--secondary-color); margin-bottom: 1rem;">
+                        使用标注好的数据训练 YOLO 模型，支持自定义训练参数
+                    </p>
+                    <a href="/training" class="btn btn-success">开始训练</a>
+                </div>
+                <div>
+                    <h3 style="margin-bottom: 0.5rem;">3️⃣ 模型部署</h3>
+                    <p style="color: var(--secondary-color); margin-bottom: 1rem;">
+                        部署训练好的模型，通过 API 提供推理服务
+                    </p>
+                    <a href="/inference" class="btn btn-secondary">开始推理</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 功能特性 -->
+        <div class="card">
+            <div class="card-header">✨ 平台特性</div>
+            <div class="grid grid-2">
+                <div>
+                    <h4>🎨 完整的数据标注工作流</h4>
+                    <ul style="padding-left: 1.5rem; color: var(--secondary-color);">
+                        <li>集成 Label Studio 标注平台</li>
+                        <li>支持多种标注任务类型</li>
+                        <li>一键导出为 YOLO 格式</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>🚀 强大的模型训练能力</h4>
+                    <ul style="padding-left: 1.5rem; color: var(--secondary-color);">
+                        <li>基于 Ultralytics YOLO</li>
+                        <li>支持自定义训练参数</li>
+                        <li>实时训练进度监控</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>🔌 灵活的 API 接口</h4>
+                    <ul style="padding-left: 1.5rem; color: var(--secondary-color);">
+                        <li>RESTful API 设计</li>
+                        <li>支持批量推理</li>
+                        <li>多种模型格式导出</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>📦 容器化部署</h4>
+                    <ul style="padding-left: 1.5rem; color: var(--secondary-color);">
+                        <li>Docker 容器化部署</li>
+                        <li>一键启动所有服务</li>
+                        <li>易于扩展和维护</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- API 文档 -->
+        <div class="card">
+            <div class="card-header">📚 文档与资源</div>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <a href="/api/docs" class="btn btn-primary" target="_blank">📖 API 文档</a>
+                <a href="https://docs.ultralytics.com" class="btn btn-secondary" target="_blank">📘 YOLO 文档</a>
+                <a href="https://labelstud.io/guide" class="btn btn-secondary" target="_blank">📗 Label Studio 文档</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/api.js"></script>
+    <script>
+        // 加载系统信息
+        async function loadSystemInfo() {
+            try {
+                const info = await API.getSystemInfo();
+                document.getElementById('stat-models').textContent = info.total_models;
+                document.getElementById('stat-datasets').textContent = info.total_datasets;
+                document.getElementById('stat-gpu').textContent = info.gpu_available ? '✓' : '✗';
+                document.getElementById('stat-version').textContent = info.ultralytics_version;
+            } catch (error) {
+                console.error('Failed to load system info:', error);
+            }
+        }
+
+        // 页面加载时获取系统信息
+        loadSystemInfo();
+        
+        // 每30秒刷新一次
+        setInterval(loadSystemInfo, 30000);
+    </script>
+</body>
+</html>
