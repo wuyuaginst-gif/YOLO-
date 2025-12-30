@@ -1,0 +1,121 @@
+version: '3.8'
+
+services:
+  opencv-platform-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    image: opencv-platform:dev
+    container_name: opencv-platform-dev
+    ports:
+      - "8000:8000"
+    
+    # 🔥 关键优化：挂载代码目录，实现热重载
+    volumes:
+      # 挂载应用代码（代码修改立即生效）
+      - ./backend:/app/backend
+      - ./frontend:/app/frontend
+      - ./config:/app/config
+      - ./app.py:/app/app.py
+      
+      # 挂载数据和日志目录
+      - ./data:/app/data
+      - ./logs:/app/logs
+      
+      # 挂载环境变量（只读）
+      - ./.env:/app/.env:ro
+      
+      # 不挂载 Python 包（使用容器内的）
+      # 如果需要修改依赖，需要重新构建镜像
+    
+    environment:
+      # 应用配置
+      APP_NAME: "OpenCV Platform (Dev)"
+      APP_VERSION: "1.0.0-dev"
+      DEBUG: "True"
+      API_PORT: 8000
+      
+      # 路径配置
+      DATA_DIR: /app/data
+      DATASETS_DIR: /app/data/datasets
+      MODELS_DIR: /app/data/models
+      EXPORTS_DIR: /app/data/exports
+      UPLOADS_DIR: /app/data/uploads
+      
+      # Label Studio 配置
+      LABEL_STUDIO_URL: "http://host.docker.internal:8087"
+      
+      # Python 配置
+      PYTHONUNBUFFERED: 1
+      PYTHONPATH: /app
+      
+      # 开发模式特定配置
+      RELOAD: "True"  # 启用热重载
+    
+    # 🔥 使用热重载命令（代码修改后自动重启）
+    command: >
+      uvicorn app:app
+      --host 0.0.0.0
+      --port 8000
+      --reload
+      --reload-dir /app/backend
+      --reload-dir /app/frontend
+      --log-level info
+    
+    networks:
+      - opencv-network
+    
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    
+    restart: unless-stopped
+    
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/system/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    
+    # 日志配置
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # 资源限制（开发环境适当放宽）
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 8G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+
+  # Label Studio 服务（可选，用于数据标注）
+  labelstudio:
+    image: heartexlabs/label-studio:latest
+    container_name: labelstudio-dev
+    ports:
+      - "8087:8080"
+    volumes:
+      - labelstudio-data:/label-studio/data
+    environment:
+      - LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED=true
+      - LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT=/label-studio/data
+    networks:
+      - opencv-network
+    restart: unless-stopped
+
+networks:
+  opencv-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+volumes:
+  labelstudio-data:
