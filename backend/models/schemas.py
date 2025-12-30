@@ -16,7 +16,7 @@ class DetectionResult(BaseModel):
 
 class InferenceRequest(BaseModel):
     """推理请求"""
-    model_name: Optional[str] = "yolov8n.pt"
+    model_name: Optional[str] = "yolo11n.pt"
     confidence: Optional[float] = 0.25
     iou_threshold: Optional[float] = 0.45
     img_size: Optional[int] = 640
@@ -35,7 +35,7 @@ class TrainingConfig(BaseModel):
     """训练配置"""
     project_name: str
     dataset_path: str
-    model_type: str = "yolov8n"
+    model_type: str = "yolo11n"
     epochs: int = 100
     batch_size: int = 16
     img_size: int = 640
