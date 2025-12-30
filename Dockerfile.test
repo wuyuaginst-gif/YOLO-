@@ -1,0 +1,48 @@
+# Test Dockerfile - 快速验证版本
+FROM python:3.12-slim-bookworm
+
+LABEL maintainer="OpenCV Platform"
+LABEL description="测试镜像 - 验证依赖安装"
+
+WORKDIR /app
+
+# 设置环境变量
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    DEBIAN_FRONTEND=noninteractive
+
+# 测试系统依赖安装
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender1 \
+    libgomp1 \
+    curl \
+    wget \
+    git \
+    gcc \
+    g++ \
+    libxcb1 \
+    libxkbcommon0 \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# 验证Python版本
+RUN python3 --version
+
+# 只安装核心依赖进行快速测试
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir \
+    fastapi>=0.104.0 \
+    uvicorn[standard]>=0.24.0 \
+    python-multipart>=0.0.6
+
+# 创建测试用户
+RUN useradd -m -u 1000 appuser
+USER appuser
+
+EXPOSE 8000
+
+CMD ["python3", "-c", "print('Test image built successfully!')"]

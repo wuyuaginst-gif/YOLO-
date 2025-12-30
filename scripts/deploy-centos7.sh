@@ -111,9 +111,19 @@ install_docker() {
 install_docker_compose() {
     log_info "检查 Docker Compose 安装状态..."
     
+    # 检查 docker compose (v2 插件方式)
+    if docker compose version &> /dev/null; then
+        compose_version=$(docker compose version)
+        log_success "Docker Compose (Plugin) 已安装: $compose_version"
+        DOCKER_COMPOSE_CMD="docker compose"
+        return 0
+    fi
+    
+    # 检查 docker-compose (v1 独立方式)
     if command -v docker-compose &> /dev/null; then
         compose_version=$(docker-compose --version)
-        log_success "Docker Compose 已安装: $compose_version"
+        log_success "Docker Compose (Standalone) 已安装: $compose_version"
+        DOCKER_COMPOSE_CMD="docker-compose"
         return 0
     fi
     
@@ -129,6 +139,7 @@ install_docker_compose() {
     # 创建软链接
     sudo ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose 2>/dev/null || true
     
+    DOCKER_COMPOSE_CMD="docker-compose"
     log_success "Docker Compose 安装完成"
 }
 
@@ -196,9 +207,9 @@ download_models() {
 
 # 构建 Docker 镜像
 build_docker_image() {
-    log_info "构建 Docker 镜像..."
+    log_info "构建 Docker 镜像（这可能需要10-20分钟）..."
     
-    docker-compose -f docker-compose.prod.yml build --no-cache
+    ${DOCKER_COMPOSE_CMD} -f docker-compose.prod.yml build --no-cache
     
     log_success "Docker 镜像构建完成"
 }
@@ -207,7 +218,7 @@ build_docker_image() {
 start_services() {
     log_info "启动服务..."
     
-    docker-compose -f docker-compose.prod.yml up -d
+    ${DOCKER_COMPOSE_CMD} -f docker-compose.prod.yml up -d
     
     log_success "服务启动完成"
 }
@@ -218,7 +229,7 @@ check_services() {
     sleep 60
     
     log_info "检查服务状态..."
-    docker-compose -f docker-compose.prod.yml ps
+    ${DOCKER_COMPOSE_CMD} -f docker-compose.prod.yml ps
     
     log_info "检查健康状态..."
     max_retries=10
@@ -235,7 +246,7 @@ check_services() {
         sleep 5
     done
     
-    log_warning "健康检查未通过，请检查日志: docker-compose -f docker-compose.prod.yml logs"
+    log_warning "健康检查未通过，请检查日志: ${DOCKER_COMPOSE_CMD} -f docker-compose.prod.yml logs"
 }
 
 # 显示访问信息
@@ -252,10 +263,10 @@ show_access_info() {
     echo -e "  📖 API Docs:  ${GREEN}http://$(hostname -I | awk '{print $1}'):8000/api/docs${NC}"
     echo ""
     echo -e "${BLUE}常用命令:${NC}"
-    echo -e "  查看日志: ${YELLOW}docker-compose -f docker-compose.prod.yml logs -f${NC}"
-    echo -e "  停止服务: ${YELLOW}docker-compose -f docker-compose.prod.yml down${NC}"
-    echo -e "  重启服务: ${YELLOW}docker-compose -f docker-compose.prod.yml restart${NC}"
-    echo -e "  查看状态: ${YELLOW}docker-compose -f docker-compose.prod.yml ps${NC}"
+    echo -e "  查看日志: ${YELLOW}${DOCKER_COMPOSE_CMD} -f docker-compose.prod.yml logs -f${NC}"
+    echo -e "  停止服务: ${YELLOW}${DOCKER_COMPOSE_CMD} -f docker-compose.prod.yml down${NC}"
+    echo -e "  重启服务: ${YELLOW}${DOCKER_COMPOSE_CMD} -f docker-compose.prod.yml restart${NC}"
+    echo -e "  查看状态: ${YELLOW}${DOCKER_COMPOSE_CMD} -f docker-compose.prod.yml ps${NC}"
     echo ""
 }
 

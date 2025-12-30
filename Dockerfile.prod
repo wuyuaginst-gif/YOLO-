@@ -25,7 +25,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxext6 \
     libxrender1 \
     libgomp1 \
-    libgthread-2.0-0 \
     # 网络工具
     curl \
     wget \
@@ -34,6 +33,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # 编译工具 (某些 Python 包需要)
     gcc \
     g++ \
+    # 额外的OpenCV依赖
+    libxcb1 \
+    libxkbcommon0 \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
