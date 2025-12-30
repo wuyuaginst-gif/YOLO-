@@ -46,7 +46,8 @@ RUN mkdir -p \
     /app/data/exports \
     /app/data/uploads \
     /app/data/annotation_projects \
-    /app/logs
+    /app/logs \
+    /app/frontend/static
 
 # 复制依赖文件
 COPY requirements.txt .
@@ -70,11 +71,24 @@ RUN pip install --upgrade pip setuptools wheel && \
     Pillow>=10.0.0 \
     numpy>=1.24.0
 
-# 复制应用代码
-COPY . .
+# 复制应用代码（分层复制以利用缓存和确保静态文件）
+COPY backend /app/backend
+COPY config /app/config
+COPY frontend /app/frontend
+COPY scripts /app/scripts
+COPY app.py requirements.txt /app/
+
+# 验证静态文件是否存在
+RUN echo "Checking static files..." && \
+    ls -la /app/frontend/static/ && \
+    test -f /app/frontend/static/company-logo.png && \
+    echo "✅ Logo file found!" || echo "⚠️  Logo file NOT found!"
 
 # 设置正确的文件权限
 RUN chmod -R 755 /app && \
+    chmod -R 755 /app/frontend && \
+    chmod -R 755 /app/frontend/static && \
+    find /app/frontend/static -type f -name "*.png" -exec chmod 644 {} \; && \
     chmod -R 777 /app/data && \
     chmod -R 777 /app/logs
 
