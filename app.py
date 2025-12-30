@@ -86,6 +86,12 @@ async def labelstudio_page(request: Request):
     return templates.TemplateResponse("labelstudio.html", {"request": request})
 
 
+@app.get("/annotation", response_class=HTMLResponse)
+async def annotation_page(request: Request):
+    """本地数据标注页面"""
+    return templates.TemplateResponse("annotation.html", {"request": request})
+
+
 if __name__ == "__main__":
     import uvicorn
     

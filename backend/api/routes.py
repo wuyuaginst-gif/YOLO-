@@ -22,6 +22,7 @@ from backend.models.schemas import (
 )
 from backend.services.yolo_service import yolo_service
 from backend.services.labelstudio_service import labelstudio_service
+from backend.services.annotation_service import annotation_service
 from backend.utils.file_utils import allowed_file, save_uploaded_file, get_unique_filename
 
 router = APIRouter()
@@ -350,3 +351,118 @@ async def export_labelstudio_annotations(
         }
     else:
         raise HTTPException(status_code=500, detail="Failed to export annotations")
+
+
+# ==================== 本地标注相关 ====================
+@router.get("/annotation/projects")
+async def list_annotation_projects():
+    """列出所有标注项目"""
+    try:
+        projects = annotation_service.list_projects()
+        return projects
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/annotation/projects")
+async def create_annotation_project(data: dict):
+    """创建标注项目"""
+    try:
+        name = data.get("name")
+        description = data.get("description", "")
+        
+        if not name:
+            raise HTTPException(status_code=400, detail="Project name is required")
+        
+        project = annotation_service.create_project(name, description)
+        return project
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/annotation/projects/{project_id}")
+async def get_annotation_project(project_id: str):
+    """获取标注项目详情"""
+    try:
+        project = annotation_service.get_project(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+        return project
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/annotation/upload")
+async def upload_annotation_images(
+    project_id: str = Form(...),
+    files: List[UploadFile] = File(...)
+):
+    """上传标注图片"""
+    try:
+        result = annotation_service.upload_images(project_id, files)
+        if not result["success"]:
+            raise HTTPException(status_code=500, detail=result["message"])
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/annotation/save")
+async def save_annotation_data(data: dict):
+    """保存标注数据"""
+    try:
+        project_id = data.get("project_id")
+        annotations = data.get("annotations", {})
+        classes = data.get("classes", [])
+        
+        if not project_id:
+            raise HTTPException(status_code=400, detail="Project ID is required")
+        
+        result = annotation_service.save_annotations(project_id, annotations, classes)
+        if not result["success"]:
+            raise HTTPException(status_code=500, detail=result["message"])
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/annotation/export/{project_id}")
+async def export_annotation_project(project_id: str):
+    """导出标注项目为YOLO格式"""
+    try:
+        zip_path = annotation_service.export_to_yolo(project_id)
+        if not zip_path or not zip_path.exists():
+            raise HTTPException(status_code=500, detail="Failed to export project")
+        
+        return FileResponse(
+            path=str(zip_path),
+            filename=zip_path.name,
+            media_type="application/zip"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/annotation/image/{project_id}/{image_name}")
+async def get_annotation_image(project_id: str, image_name: str):
+    """获取标注图片"""
+    try:
+        image_path = annotation_service.get_image_path(project_id, image_name)
+        if not image_path or not image_path.exists():
+            raise HTTPException(status_code=404, detail="Image not found")
+        
+        return FileResponse(path=str(image_path))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/annotation/projects/{project_id}")
+async def delete_annotation_project(project_id: str):
+    """删除标注项目"""
+    try:
+        result = annotation_service.delete_project(project_id)
+        if not result["success"]:
+            raise HTTPException(status_code=500, detail=result["message"])
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
