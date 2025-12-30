@@ -70,6 +70,15 @@
 - ✅ 实时检测结果可视化
 - ✅ 多种模型格式导出 (ONNX, TorchScript 等)
 
+### 🎯 **Ultralytics Solutions (新增)**
+- ✅ **对象计数** - 统计进出区域的对象数量
+- ✅ **热图生成** - 可视化检测密度热点
+- ✅ **速度估算** - 计算对象移动速度
+- ✅ **距离计算** - 测量对象之间距离
+- ✅ **对象模糊** - 隐私保护（人脸/车牌模糊）
+- ✅ **对象裁剪** - 自动提取检测对象
+- ✅ **队列管理** - 监控队列长度和等待时间
+
 ### 📦 平台管理
 - ✅ 模型管理（上传、列表、删除）
 - ✅ 数据集管理（上传、列表、统计）
@@ -183,6 +192,7 @@ cp .env.example .env
 
 4️⃣ **访问应用**
 - **OpenCV Platform**: http://localhost:8000
+- **Ultralytics Solutions**: http://localhost:8000/solutions
 - **API 文档**: http://localhost:8000/api/docs
 - **Label Studio**: http://localhost:8080
 
@@ -282,6 +292,45 @@ response = requests.post('http://localhost:8000/api/v1/inference/image',
 result = response.json()
 print(result)
 ```
+
+### 4. Ultralytics Solutions 使用
+
+#### 对象计数示例
+1. 访问 Solutions 页面：http://localhost:8000/solutions
+2. 选择"对象计数"功能
+3. 上传视频文件
+4. 设置计数区域（可选）
+5. 点击"开始处理"
+6. 查看进出统计结果
+
+#### Solutions API 调用
+```python
+import requests
+
+# 对象计数
+files = {'file': open('traffic.mp4', 'rb')}
+data = {
+    'model_name': 'yolo11n.pt',
+    'region_points': '[[20,400],[1260,400]]',
+    'conf': 0.25
+}
+response = requests.post('http://localhost:8000/api/v1/solutions/object-counting', 
+                        files=files, data=data)
+result = response.json()
+print(f"进入: {result['results']['in_count']}, 离开: {result['results']['out_count']}")
+
+# 热图生成
+files = {'file': open('store.mp4', 'rb')}
+response = requests.post('http://localhost:8000/api/v1/solutions/heatmap',
+                        files=files, data={'model_name': 'yolo11n.pt'})
+
+# 距离计算
+files = {'file': open('people.jpg', 'rb')}
+response = requests.post('http://localhost:8000/api/v1/solutions/distance-calculation',
+                        files=files, data={'model_name': 'yolo11n.pt'})
+```
+
+**更多 Solutions 使用说明**，请查看：[Ultralytics Solutions 完整文档](./ULTRALYTICS_SOLUTIONS.md)
 
 ---
 
@@ -409,6 +458,57 @@ A: 确保安装了 CUDA 和 PyTorch GPU 版本，然后在训练配置中设置 
 A: 检查 Label Studio 是否正常运行，确认 `.env` 文件中的 `LABEL_STUDIO_URL` 配置正确。
 
 ### Q: 如何添加自定义模型？
+A: 将 `.pt` 模型文件上传到 `data/models/` 目录，或通过"模型管理"页面上传。
+
+### Q: Python 3.6 兼容性问题？
+A: 本项目推荐使用 Python 3.8+。如果必须使用 Python 3.6，可能需要降低某些依赖库的版本。
+
+---
+
+## 🤝 贡献指南
+
+欢迎贡献代码、报告问题或提出建议！
+
+1. Fork 项目
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启 Pull Request
+
+---
+
+## 📄 许可证
+
+本项目采用 MIT 许可证。详见 [LICENSE](LICENSE) 文件。
+
+---
+
+## 📞 联系方式
+
+如有问题或建议，请通过以下方式联系：
+
+- 提交 Issue
+- 发送邮件
+- 加入讨论群
+
+---
+
+## 🙏 致谢
+
+- [Ultralytics YOLO](https://github.com/ultralytics/ultralytics) - 强大的目标检测框架
+- [Label Studio](https://labelstud.io/) - 优秀的数据标注平台
+- [FastAPI](https://fastapi.tiangolo.com/) - 现代化的 Web 框架
+
+---
+
+<div align="center">
+
+⭐ 如果这个项目对你有帮助，请给它一个 Star！⭐
+
+Made with ❤️ by OpenCV Platform Team
+
+</div>
+添加自定义模型？
 A: 将 `.pt` 模型文件上传到 `data/models/` 目录，或通过"模型管理"页面上传。
 
 ### Q: Python 3.6 兼容性问题？

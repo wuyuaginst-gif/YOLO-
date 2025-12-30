@@ -92,6 +92,12 @@ async def annotation_page(request: Request):
     return templates.TemplateResponse("annotation.html", {"request": request})
 
 
+@app.get("/solutions", response_class=HTMLResponse)
+async def solutions_page(request: Request):
+    """Ultralytics Solutions 页面"""
+    return templates.TemplateResponse("solutions.html", {"request": request})
+
+
 if __name__ == "__main__":
     import uvicorn
     
