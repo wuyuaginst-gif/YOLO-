@@ -15,7 +15,7 @@ if ! command -v docker &> /dev/null; then
 fi
 
 # 检查 docker-compose
-if ! command -v docker-compose &> /dev/null; then
+if ! command -v docker compose &> /dev/null; then
     echo "✗ docker-compose 未安装，请先安装 docker-compose"
     exit 1
 fi
@@ -29,7 +29,7 @@ fi
 # 启动服务
 echo ""
 echo "📍 启动 Docker 容器..."
-docker-compose up -d
+docker compose up -d
 
 # 等待服务启动
 echo ""
@@ -39,7 +39,7 @@ sleep 5
 # 检查服务状态
 echo ""
 echo "📊 服务状态:"
-docker-compose ps
+docker ps
 
 echo ""
 echo "========================================="
@@ -49,10 +49,10 @@ echo ""
 echo "访问地址:"
 echo "  • OpenCV Platform: http://localhost:8000"
 echo "  • API 文档:        http://localhost:8000/api/docs"
-echo "  • Label Studio:    http://localhost:8080"
+echo "  • Label Studio:    http://localhost:8087"
 echo ""
 echo "查看日志:"
-echo "  docker-compose logs -f"
+echo "  docker compose logs -f"
 echo ""
 echo "停止服务:"
 echo "  ./scripts/stop.sh"
