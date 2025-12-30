@@ -36,7 +36,7 @@
 
 ## 🎯 项目简介
 
-**OpenCV Platform** 是一个基于 Ultralytics YOLO 的开源计算机视觉平台，旨在提供一个完整的 CV 项目开发工作流，类似于海康开放平台（Open Hikvision）或 Brain++ AI 平台。
+**OpenCV Platform** 是一个基于 Ultralytics YOLO11 的开源计算机视觉平台，旨在提供一个完整的 CV 项目开发工作流，类似于海康开放平台（Open Hikvision）或 Brain++ AI 平台。
 
 ### MVP 核心功能
 
@@ -57,7 +57,7 @@
 - ✅ 可视化标注管理界面
 
 ### 🚀 模型训练
-- ✅ 基于 Ultralytics YOLO (v8)
+- ✅ 基于 Ultralytics YOLO11 (最新版本)
 - ✅ 支持自定义训练参数配置
 - ✅ 实时训练进度监控
 - ✅ 自动保存最佳模型权重
@@ -247,7 +247,7 @@ dataset/
 在"模型训练"页面配置：
 - 项目名称
 - 数据集路径
-- 模型类型 (YOLOv8n/s/m/l/x)
+- 模型类型 (YOLO11n/s/m/l/x)
 - 训练轮数
 - 批次大小
 - 图像尺寸
@@ -274,7 +274,7 @@ import requests
 # 推理请求
 files = {'file': open('image.jpg', 'rb')}
 data = {
-    'model_name': 'yolov8n.pt',
+    'model_name': 'yolo11n.pt',
     'confidence': 0.25
 }
 response = requests.post('http://localhost:8000/api/v1/inference/image', 

@@ -42,7 +42,7 @@ class Settings:
     UPLOADS_DIR: Path = UPLOADS_DIR
     
     # 模型配置
-    DEFAULT_MODEL: str = os.getenv("DEFAULT_MODEL", "yolov8n.pt")
+    DEFAULT_MODEL: str = os.getenv("DEFAULT_MODEL", "yolo11n.pt")
     CONFIDENCE_THRESHOLD: float = float(os.getenv("CONFIDENCE_THRESHOLD", "0.25"))
     IOU_THRESHOLD: float = float(os.getenv("IOU_THRESHOLD", "0.45"))
     
