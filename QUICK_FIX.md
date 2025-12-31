@@ -6,15 +6,43 @@ POST /api/v1/inference/image HTTP/1.1" 500 Internal Server Error
 ```
 
 ## 原因
-**缺少核心依赖包：**
-- ❌ PyTorch (torch)
-- ❌ Ultralytics
+**Docker 部署：** 使用了旧的镜像，缺少依赖包  
+**本地部署：** 缺少 PyTorch 和 Ultralytics
 
-## 立即修复（3 步）
+---
+
+## 🐳 Docker 部署修复（2 步）
+
+### 步骤 1️⃣：重建 Docker 镜像
+
+```bash
+# 进入项目目录
+cd /path/to/your/opencv-platform
+
+# 方式 A：使用一键脚本（推荐）
+./rebuild_docker.sh
+
+# 方式 B：手动重建
+docker compose -f docker-compose.dev.yml down --rmi all
+docker compose -f docker-compose.dev.yml build --no-cache
+docker compose -f docker-compose.dev.yml up -d
+```
+
+### 步骤 2️⃣：验证修复
+
+```bash
+# 检查容器内的依赖
+docker exec opencv-platform-dev pip list | grep -E "(torch|ultralytics)"
+
+# 或访问 API 文档测试
+http://localhost:8000/api/docs
+```
+
+---
+
+## 💻 本地部署修复（3 步）
 
 ### 步骤 1️⃣：安装依赖
-
-在你的**本地环境**（不是沙箱环境）运行：
 
 ```bash
 # 进入项目目录
@@ -35,10 +63,6 @@ pip install -r requirements.txt
 ### 步骤 2️⃣：重启服务
 
 ```bash
-# 如果使用 Docker
-docker compose -f docker-compose.dev.yml restart
-
-# 如果是直接运行
 # 按 Ctrl+C 停止，然后重新运行
 python app.py
 ```

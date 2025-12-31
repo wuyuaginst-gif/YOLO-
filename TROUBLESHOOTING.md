@@ -7,7 +7,15 @@
 opencv-platform-dev | INFO: 192.168.2.93:64787 - "POST /api/v1/inference/image HTTP/1.1" 500 Internal Server Error
 ```
 
-### 根本原因
+### 根本原因（Docker 部署）
+**使用了旧的 Docker 镜像**，该镜像在 `Dockerfile.prod` 添加依赖包安装命令**之前**构建：
+
+当你运行 `docker compose -f docker-compose.dev.yml up -d` 时：
+- ✅ Dockerfile.prod **确实**包含了 PyTorch 和 Ultralytics 的安装命令
+- ❌ 但如果镜像已存在，Docker 会**直接使用旧镜像**，不会重新构建
+- ❌ 导致容器内缺少核心依赖包
+
+### 根本原因（本地部署）
 **缺少核心依赖包**，导致 YOLO 服务无法初始化：
 
 - ❌ `torch` (PyTorch) - **未安装**
@@ -25,14 +33,57 @@ opencv-platform-dev | INFO: 192.168.2.93:64787 - "POST /api/v1/inference/image H
 
 ## 💡 解决方案
 
-### 方案一：使用安装脚本（推荐）
+### 🐳 Docker 部署解决方案
+
+#### 方案一：一键重建脚本（强烈推荐）
+
+```bash
+# 运行重建脚本（自动完成所有步骤）
+./rebuild_docker.sh
+```
+
+#### 方案二：手动重建 Docker 镜像
+
+```bash
+# 1. 停止并删除旧容器和镜像
+docker compose -f docker-compose.dev.yml down --rmi all
+
+# 2. 重新构建镜像（不使用缓存）
+docker compose -f docker-compose.dev.yml build --no-cache
+
+# 3. 启动服务
+docker compose -f docker-compose.dev.yml up -d
+
+# 4. 查看日志
+docker compose -f docker-compose.dev.yml logs -f
+```
+
+#### 验证 Docker 容器内的依赖
+
+```bash
+# 检查容器内的包
+docker exec opencv-platform-dev pip list | grep torch
+docker exec opencv-platform-dev pip list | grep ultralytics
+
+# 或进入容器内部验证
+docker exec -it opencv-platform-dev bash
+>>> python3 -c "import torch; print('PyTorch:', torch.__version__)"
+>>> python3 -c "import ultralytics; print('Ultralytics:', ultralytics.__version__)"
+>>> exit
+```
+
+---
+
+### 💻 本地部署解决方案
+
+#### 方案一：使用安装脚本（推荐）
 
 ```bash
 # 运行安装脚本
 ./install_dependencies.sh
 ```
 
-### 方案二：手动安装
+#### 方案二：手动安装
 
 #### 1️⃣ 安装 PyTorch
 
