@@ -187,19 +187,26 @@ cd webapp
 # 2. 配置环境变量（可选）
 cp .env.example .env
 
-# 3. 启动开发环境
-docker compose -f docker-compose.dev.yml up -d
+# 3. 启动开发环境（首次需要构建镜像）
+docker compose -f docker-compose.dev.yml up -d --build
 
-# 4. 查看日志
+# 4. 验证部署（可选）
+./scripts/verify_deployment.sh
+
+# 5. 查看日志
 docker compose -f docker-compose.dev.yml logs -f
 
-# 5. 停止服务
+# 6. 停止服务
 docker compose -f docker-compose.dev.yml down
 ```
 
 **访问应用：**
 - **OpenCV Platform**: http://localhost:8000
 - **API 文档**: http://localhost:8000/api/docs
+
+**⚠️ 首次使用注意事项：**
+- 首次推理时模型会自动下载（约 6 MB），需要网络连接
+- 如遇到问题，查看 [故障排查指南](TROUBLESHOOTING.md)
 
 ### 方式二：Docker 生产环境
 

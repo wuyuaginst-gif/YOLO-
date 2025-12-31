@@ -84,17 +84,14 @@ RUN echo "Checking static files..." && \
     test -f /app/frontend/static/company-logo.png && \
     echo "✅ Logo file found!" || echo "⚠️  Logo file NOT found!"
 
-# 设置正确的文件权限
-RUN chmod -R 755 /app && \
-    chmod -R 755 /app/frontend && \
-    chmod -R 755 /app/frontend/static && \
-    find /app/frontend/static -type f -name "*.png" -exec chmod 644 {} \; && \
+# 创建非 root 用户运行应用（安全最佳实践）
+RUN useradd -m -u 1000 appuser && \
+    chown -R appuser:appuser /app && \
+    # 确保数据目录有写权限
+    chmod -R 755 /app && \
     chmod -R 777 /app/data && \
     chmod -R 777 /app/logs
 
-# 创建非 root 用户运行应用（安全最佳实践）
-RUN useradd -m -u 1000 appuser && \
-    chown -R appuser:appuser /app
 USER appuser
 
 # 暴露端口
