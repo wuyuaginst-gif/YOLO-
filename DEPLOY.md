@@ -56,17 +56,17 @@ vim .env
 ### 3. 启动开发环境
 
 ```bash
-docker-compose -f docker-compose.dev.yml up -d
+docker compose -f docker-compose.dev.yml up -d
 ```
 
 ### 4. 验证部署
 
 ```bash
 # 查看容器状态
-docker-compose -f docker-compose.dev.yml ps
+docker compose -f docker-compose.dev.yml ps
 
 # 查看日志
-docker-compose -f docker-compose.dev.yml logs -f opencv-platform-dev
+docker compose -f docker-compose.dev.yml logs -f opencv-platform-dev
 
 # 健康检查
 curl http://localhost:8000/api/v1/system/health
@@ -81,7 +81,7 @@ curl http://localhost:8000/api/v1/system/health
 ### 6. 停止服务
 
 ```bash
-docker-compose -f docker-compose.dev.yml down
+docker compose -f docker-compose.dev.yml down
 ```
 
 ---
@@ -108,34 +108,34 @@ API_PORT=8000
 ### 2. 构建生产镜像
 
 ```bash
-docker-compose -f docker-compose.prod.yml build
+docker compose -f docker-compose.prod.yml build
 ```
 
 ### 3. 启动生产环境
 
 ```bash
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 ### 4. 监控和维护
 
 #### 查看服务状态
 ```bash
-docker-compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml ps
 ```
 
 #### 查看日志
 ```bash
 # 查看所有日志
-docker-compose -f docker-compose.prod.yml logs -f
+docker compose -f docker-compose.prod.yml logs -f
 
 # 查看最近 100 行日志
-docker-compose -f docker-compose.prod.yml logs --tail=100
+docker compose -f docker-compose.prod.yml logs --tail=100
 ```
 
 #### 重启服务
 ```bash
-docker-compose -f docker-compose.prod.yml restart
+docker compose -f docker-compose.prod.yml restart
 ```
 
 #### 更新服务
@@ -144,10 +144,10 @@ docker-compose -f docker-compose.prod.yml restart
 git pull
 
 # 重新构建镜像
-docker-compose -f docker-compose.prod.yml build
+docker compose -f docker-compose.prod.yml build
 
 # 重启服务
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 ### 5. 备份和恢复
@@ -245,11 +245,11 @@ curl http://localhost:8000/api/v1/system/info
 sudo systemctl status docker
 
 # 查看容器日志
-docker-compose -f docker-compose.dev.yml logs
+docker compose -f docker-compose.dev.yml logs
 
 # 清理并重新启动
-docker-compose -f docker-compose.dev.yml down -v
-docker-compose -f docker-compose.dev.yml up -d
+docker compose -f docker-compose.dev.yml down -v
+docker compose -f docker-compose.dev.yml up -d
 ```
 
 ### Q2: GPU 不可用？
@@ -280,7 +280,7 @@ sudo lsof -i :8000
 vim .env
 # API_PORT=8001
 
-# 或者在 docker-compose 中修改端口映射
+# 或者在 Docker Compose 配置中修改端口映射
 vim docker-compose.dev.yml
 # ports:
 #   - "8001:8000"
@@ -304,7 +304,7 @@ pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/
 
 **解决方案：**
 
-编辑 docker-compose 文件，调整资源限制：
+编辑 Docker Compose 配置文件，调整资源限制：
 
 ```yaml
 deploy:
@@ -343,7 +343,7 @@ wget https://github.com/ultralytics/assets/releases/download/v0.0.0/yolov8n.pt
 file image.jpg
 
 # 增加内存限制
-# 编辑 docker-compose.yml
+# 编辑配置文件
 ```
 
 ---
@@ -382,8 +382,8 @@ sudo ufw allow from 192.168.1.0/24 to any port 8000
 sudo apt update && sudo apt upgrade
 
 # 更新 Docker 镜像
-docker-compose -f docker-compose.prod.yml pull
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 5. **备份策略**

@@ -14,9 +14,9 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
-# 检查 docker-compose
-if ! command -v docker compose &> /dev/null; then
-    echo "✗ docker-compose 未安装，请先安装 docker-compose"
+# 检查 Docker Compose
+if ! docker compose version &> /dev/null; then
+    echo "✗ Docker Compose 未安装或版本过低，请升级到 Docker Compose v2+"
     exit 1
 fi
 
@@ -49,7 +49,6 @@ echo ""
 echo "访问地址:"
 echo "  • OpenCV Platform: http://localhost:8000"
 echo "  • API 文档:        http://localhost:8000/api/docs"
-echo "  • Label Studio:    http://localhost:8087"
 echo ""
 echo "查看日志:"
 echo "  docker compose logs -f"

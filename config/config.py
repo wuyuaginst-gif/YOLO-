@@ -28,11 +28,6 @@ class Settings:
     
     # 服务端口
     API_PORT: int = int(os.getenv("API_PORT", "8000"))
-    LABEL_STUDIO_PORT: int = int(os.getenv("LABEL_STUDIO_PORT", "8080"))
-    
-    # Label Studio 配置
-    LABEL_STUDIO_URL: str = os.getenv("LABEL_STUDIO_URL", "http://localhost:8080")
-    LABEL_STUDIO_API_KEY: str = os.getenv("LABEL_STUDIO_API_KEY", "")
     
     # 路径配置
     DATA_DIR: Path = DATA_DIR
