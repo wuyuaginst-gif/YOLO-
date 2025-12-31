@@ -1,18 +1,22 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-本地数据标注服务
+本地数据标注服务 - 集成 Supervision
 """
 import os
 import json
 import shutil
 import zipfile
+import cv2
+import numpy as np
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 import uuid
+import supervision as sv
 
 from config.config import settings
+from backend.services.supervision_service import supervision_service
 
 
 class AnnotationService:
@@ -426,6 +430,203 @@ results = model.train(data='data.yaml', epochs=100)
         if image_path.exists():
             return image_path
         return None
+    
+    def auto_annotate_with_model(
+        self,
+        project_id: str,
+        model_path: str,
+        confidence: float = 0.25,
+        iou_threshold: float = 0.45
+    ) -> Dict[str, Any]:
+        """
+        使用 YOLO 模型自动标注项目图片
+        
+        Args:
+            project_id: 项目ID
+            model_path: YOLO 模型路径
+            confidence: 置信度阈值
+            iou_threshold: IOU 阈值
+            
+        Returns:
+            标注结果统计
+        """
+        project_dir = self.projects_dir / project_id
+        if not project_dir.exists():
+            return {"success": False, "message": "Project not found"}
+        
+        try:
+            from ultralytics import YOLO
+            
+            # 加载模型
+            model = YOLO(model_path)
+            
+            # 获取所有图片
+            images_dir = project_dir / "images"
+            image_files = list(images_dir.glob("*"))
+            image_files = [f for f in image_files if f.suffix.lower() in ['.jpg', '.jpeg', '.png', '.bmp', '.webp']]
+            
+            annotations_dict = {}
+            total_detections = 0
+            
+            # 对每张图片进行推理
+            for img_path in image_files:
+                # YOLO 推理
+                results = model.predict(
+                    str(img_path),
+                    conf=confidence,
+                    iou=iou_threshold,
+                    verbose=False
+                )
+                
+                # 转换为 supervision Detections
+                detections, _ = supervision_service.yolo_results_to_detections(
+                    results,
+                    class_names=model.names
+                )
+                
+                # 转换为标注格式
+                image = cv2.imread(str(img_path))
+                h, w = image.shape[:2]
+                
+                image_annotations = []
+                for i in range(len(detections)):
+                    class_id = detections.class_id[i]
+                    xyxy = detections.xyxy[i]
+                    confidence_score = detections.confidence[i]
+                    
+                    # 转换为归一化坐标
+                    x = float(xyxy[0] / w)
+                    y = float(xyxy[1] / h)
+                    width = float((xyxy[2] - xyxy[0]) / w)
+                    height = float((xyxy[3] - xyxy[1]) / h)
+                    
+                    annotation = {
+                        'class': model.names[class_id],
+                        'class_id': int(class_id),
+                        'x': x,
+                        'y': y,
+                        'width': width,
+                        'height': height,
+                        'confidence': float(confidence_score)
+                    }
+                    image_annotations.append(annotation)
+                    total_detections += 1
+                
+                annotations_dict[img_path.name] = image_annotations
+            
+            # 保存标注
+            classes = list(model.names.values())
+            self.save_annotations(project_id, annotations_dict, classes)
+            
+            return {
+                "success": True,
+                "message": "Auto annotation completed",
+                "total_images": len(image_files),
+                "total_detections": total_detections,
+                "classes": classes
+            }
+            
+        except Exception as e:
+            print(f"Error in auto annotation: {e}")
+            import traceback
+            traceback.print_exc()
+            return {
+                "success": False,
+                "message": str(e)
+            }
+    
+    def visualize_annotations(
+        self,
+        project_id: str,
+        image_name: str,
+        output_dir: Optional[str] = None
+    ) -> Optional[Path]:
+        """
+        使用 supervision 可视化标注
+        
+        Args:
+            project_id: 项目ID
+            image_name: 图片名称
+            output_dir: 输出目录（可选）
+            
+        Returns:
+            可视化图片路径
+        """
+        project = self.get_project(project_id)
+        if not project:
+            return None
+        
+        try:
+            # 加载图片
+            image_path = self.get_image_path(project_id, image_name)
+            if not image_path:
+                return None
+            
+            image = cv2.imread(str(image_path))
+            h, w = image.shape[:2]
+            
+            # 获取标注
+            annotations = project['annotations'].get(image_name, [])
+            if not annotations:
+                return None
+            
+            # 转换为 supervision Detections
+            xyxy_list = []
+            class_ids = []
+            confidences = []
+            
+            for ann in annotations:
+                # 从归一化坐标转换回像素坐标
+                x = ann['x'] * w
+                y = ann['y'] * h
+                width = ann['width'] * w
+                height = ann['height'] * h
+                
+                x1 = x
+                y1 = y
+                x2 = x + width
+                y2 = y + height
+                
+                xyxy_list.append([x1, y1, x2, y2])
+                class_ids.append(ann.get('class_id', 0))
+                confidences.append(ann.get('confidence', 1.0))
+            
+            detections = sv.Detections(
+                xyxy=np.array(xyxy_list),
+                class_id=np.array(class_ids),
+                confidence=np.array(confidences)
+            )
+            
+            # 生成标签
+            labels = [
+                f"{project['classes'][class_id]} {conf:.2f}"
+                for class_id, conf in zip(class_ids, confidences)
+            ]
+            
+            # 可视化
+            annotated_image = supervision_service.annotate_image(
+                image,
+                detections,
+                labels
+            )
+            
+            # 保存
+            if output_dir is None:
+                output_dir = self.projects_dir / project_id / "visualizations"
+            else:
+                output_dir = Path(output_dir)
+            
+            output_dir.mkdir(parents=True, exist_ok=True)
+            output_path = output_dir / f"annotated_{image_name}"
+            cv2.imwrite(str(output_path), annotated_image)
+            
+            return output_path
+            
+        except Exception as e:
+            print(f"Error visualizing annotations: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
 
 
 # 全局服务实例
