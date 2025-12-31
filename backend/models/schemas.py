@@ -97,13 +97,6 @@ class ExportConfig(BaseModel):
     opset: int = 12  # ONNX opset 版本
 
 
-class LabelStudioProject(BaseModel):
-    """Label Studio 项目"""
-    id: Optional[int] = None
-    title: str
-    description: Optional[str] = ""
-    created_at: Optional[datetime] = None
-
 
 class SystemInfo(BaseModel):
     """系统信息"""

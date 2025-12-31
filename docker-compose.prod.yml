@@ -31,8 +31,7 @@ services:
       - EXPORTS_DIR=/app/data/exports
       - UPLOADS_DIR=/app/data/uploads
       
-      # Label Studio (如果使用外部服务)
-      - LABEL_STUDIO_URL=http://host.docker.internal:8087
+
       
       # Python 配置
       - PYTHONUNBUFFERED=1
@@ -81,24 +80,3 @@ networks:
     ipam:
       config:
         - subnet: 172.28.0.0/16
-
-# 如果需要独立部署 Label Studio，取消下方注释
-# 
-# services:
-#   labelstudio:
-#     image: heartexlabs/label-studio:latest
-#     container_name: labelstudio-service
-#     ports:
-#       - "8080:8080"
-#     volumes:
-#       - labelstudio-data:/label-studio/data
-#     environment:
-#       - LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED=true
-#       - LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT=/label-studio/data
-#     restart: unless-stopped
-#     networks:
-#       - opencv-network
-# 
-# volumes:
-#   labelstudio-data:
-#     driver: local

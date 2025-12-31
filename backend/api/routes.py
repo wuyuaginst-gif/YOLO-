@@ -18,15 +18,15 @@ from config.config import settings
 from backend.models.schemas import (
     InferenceRequest, InferenceResponse, TrainingConfig,
     TrainingStatus, ModelInfo, DatasetInfo, ExportConfig,
-    LabelStudioProject, SystemInfo,
+    SystemInfo,
     ObjectCountingRequest, HeatmapRequest, SpeedEstimationRequest,
     DistanceCalculationRequest, ObjectBlurRequest, ObjectCropRequest,
     QueueManagementRequest, SolutionResponse
 )
 from backend.services.yolo_service import yolo_service
-from backend.services.labelstudio_service import labelstudio_service
 from backend.services.annotation_service import annotation_service
 from backend.services.solutions_service import solutions_service
+from backend.services.supervision_service import supervision_service
 from backend.utils.file_utils import allowed_file, save_uploaded_file, get_unique_filename
 
 router = APIRouter()
@@ -74,7 +74,7 @@ async def health_check():
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
         "yolo_service": yolo_service is not None,
-        "labelstudio_available": True
+        "supervision_available": True
     }
 
 
@@ -307,56 +307,6 @@ async def upload_dataset(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# ==================== Label Studio 集成 ====================
-@router.get("/labelstudio/check")
-async def check_labelstudio():
-    """检查 Label Studio 连接"""
-    return labelstudio_service.check_connection()
-
-
-@router.get("/labelstudio/projects", response_model=List[LabelStudioProject])
-async def list_labelstudio_projects():
-    """列出 Label Studio 项目"""
-    return labelstudio_service.list_projects()
-
-
-@router.post("/labelstudio/projects/create")
-async def create_labelstudio_project(title: str, description: str = ""):
-    """创建 Label Studio 项目"""
-    project_id = labelstudio_service.create_project(title, description)
-    if project_id:
-        return {
-            "success": True,
-            "project_id": project_id,
-            "message": "Project created successfully"
-        }
-    else:
-        raise HTTPException(status_code=500, detail="Failed to create project")
-
-
-@router.post("/labelstudio/export/{project_id}")
-async def export_labelstudio_annotations(
-    project_id: int,
-    dataset_name: str,
-    format: str = "YOLO"
-):
-    """导出 Label Studio 标注为 YOLO 格式"""
-    dataset_info = labelstudio_service.convert_to_yolo_format(
-        project_id,
-        str(settings.DATASETS_DIR),
-        dataset_name
-    )
-    
-    if dataset_info:
-        return {
-            "success": True,
-            "message": "Annotations exported successfully",
-            "dataset": dataset_info
-        }
-    else:
-        raise HTTPException(status_code=500, detail="Failed to export annotations")
-
-
 # ==================== 本地标注相关 ====================
 @router.get("/annotation/projects")
 async def list_annotation_projects():
@@ -470,6 +420,43 @@ async def delete_annotation_project(project_id: str):
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+
+@router.post("/annotation/auto-annotate/{project_id}")
+async def auto_annotate_project(
+    project_id: str,
+    model_name: Optional[str] = Form("yolov8n.pt"),
+    confidence: float = Form(0.25),
+    iou_threshold: float = Form(0.45)
+):
+    """使用YOLO模型自动标注项目"""
+    try:
+        result = annotation_service.auto_annotate_with_model(
+            project_id=project_id,
+            model_path=str(settings.MODELS_DIR / model_name),
+            confidence=confidence,
+            iou_threshold=iou_threshold
+        )
+        if not result["success"]:
+            raise HTTPException(status_code=500, detail=result["message"])
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/annotation/visualize/{project_id}/{image_name}")
+async def visualize_annotations(project_id: str, image_name: str):
+    """可视化标注结果"""
+    try:
+        output_path = annotation_service.visualize_annotations(project_id, image_name)
+        if not output_path or not output_path.exists():
+            raise HTTPException(status_code=500, detail="Failed to visualize annotations")
+        
+        return FileResponse(path=str(output_path))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 
 # ==================== Ultralytics Solutions ====================
