@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # OpenCV Platform 生产环境主服务
   opencv-platform:

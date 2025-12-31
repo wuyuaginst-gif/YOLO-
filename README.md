@@ -188,13 +188,13 @@ cd webapp
 cp .env.example .env
 
 # 3. 启动开发环境
-docker-compose -f docker-compose.dev.yml up -d
+docker compose -f docker-compose.dev.yml up -d
 
 # 4. 查看日志
-docker-compose -f docker-compose.dev.yml logs -f
+docker compose -f docker-compose.dev.yml logs -f
 
 # 5. 停止服务
-docker-compose -f docker-compose.dev.yml down
+docker compose -f docker-compose.dev.yml down
 ```
 
 **访问应用：**
@@ -211,16 +211,16 @@ cp .env.example .env
 # 编辑 .env 文件，配置必要参数
 
 # 2. 构建并启动生产环境
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d
 
 # 3. 查看服务状态
-docker-compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml ps
 
 # 4. 查看日志
-docker-compose -f docker-compose.prod.yml logs -f
+docker compose -f docker-compose.prod.yml logs -f
 
 # 5. 停止服务
-docker-compose -f docker-compose.prod.yml down
+docker compose -f docker-compose.prod.yml down
 ```
 
 ### 方式三：本地开发
