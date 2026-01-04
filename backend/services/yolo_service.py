@@ -4,6 +4,7 @@ YOLO 模型服务
 import os
 import time
 import json
+import threading
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime
@@ -129,25 +130,23 @@ class YOLOService:
                 image_shape=[0, 0, 0]
             )
     
-    def train(self, config: TrainingConfig) -> str:
-        """开始训练"""
-        task_id = f"train_{int(time.time())}"
-        
-        # 创建训练状态
-        status = TrainingStatus(
-            task_id=task_id,
-            status="pending",
-            progress=0.0,
-            current_epoch=0,
-            total_epochs=config.epochs,
-            created_at=datetime.now(),
-            updated_at=datetime.now()
-        )
-        self.training_tasks[task_id] = status
+    def _train_thread(self, task_id: str, config: TrainingConfig):
+        """后台训练线程"""
+        status = self.training_tasks[task_id]
         
         try:
             # 加载基础模型
-            model_type = config.model_type or "yolov8n"
+            model_type = config.model_type or "yolo11n"
+            
+            print(f"[{task_id}] 开始训练")
+            print(f"[{task_id}] 模型类型: {model_type}")
+            print(f"[{task_id}] 数据集: {config.dataset_path}")
+            
+            # 验证数据集路径
+            dataset_path = Path(config.dataset_path)
+            if not dataset_path.exists():
+                raise FileNotFoundError(f"数据集文件不存在: {config.dataset_path}")
+            
             if config.pretrained:
                 model = YOLO(f"{model_type}.pt")
             else:
@@ -157,9 +156,11 @@ class YOLOService:
             status.status = "running"
             status.updated_at = datetime.now()
             
+            print(f"[{task_id}] 模型加载成功，开始训练...")
+            
             # 开始训练
             results = model.train(
-                data=config.dataset_path,
+                data=str(config.dataset_path),
                 epochs=config.epochs,
                 batch=config.batch_size,
                 imgsz=config.img_size,
@@ -176,6 +177,8 @@ class YOLOService:
                 verbose=True
             )
             
+            print(f"[{task_id}] 训练完成")
+            
             # 训练完成
             status.status = "completed"
             status.progress = 100.0
@@ -186,9 +189,39 @@ class YOLOService:
             status.updated_at = datetime.now()
             
         except Exception as e:
+            print(f"[{task_id}] 训练失败: {e}")
+            import traceback
+            traceback.print_exc()
+            
             status.status = "failed"
             status.error_message = str(e)
             status.updated_at = datetime.now()
+    
+    def train(self, config: TrainingConfig) -> str:
+        """开始训练（异步）"""
+        task_id = f"train_{int(time.time())}"
+        
+        # 创建训练状态
+        status = TrainingStatus(
+            task_id=task_id,
+            status="pending",
+            progress=0.0,
+            current_epoch=0,
+            total_epochs=config.epochs,
+            created_at=datetime.now(),
+            updated_at=datetime.now()
+        )
+        self.training_tasks[task_id] = status
+        
+        # 在后台线程中启动训练
+        thread = threading.Thread(
+            target=self._train_thread,
+            args=(task_id, config),
+            daemon=True
+        )
+        thread.start()
+        
+        print(f"训练任务已创建: {task_id}")
         
         return task_id
     
