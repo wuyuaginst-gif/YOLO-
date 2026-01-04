@@ -4,19 +4,24 @@ OpenCV Platform - 主应用入口
 """
 import sys
 from pathlib import Path
+from datetime import datetime
 
 # 添加项目根目录到 Python 路径
 project_root = Path(__file__).resolve().parent
 sys.path.insert(0, str(project_root))
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from config.config import settings
 from backend.api.routes import router
+
+# 版本戳 - 用于缓存破坏
+APP_VERSION_TIMESTAMP = datetime.now().strftime("%Y%m%d%H%M%S")
 
 # 创建 FastAPI 应用
 app = FastAPI(
@@ -26,6 +31,27 @@ app = FastAPI(
     docs_url="/api/docs",
     redoc_url="/api/redoc"
 )
+
+# 缓存控制中间件
+class CacheControlMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        
+        # 对静态资源设置缓存策略
+        if request.url.path.startswith("/static/"):
+            # 静态资源缓存1小时，但必须重新验证
+            response.headers["Cache-Control"] = "public, max-age=3600, must-revalidate"
+            response.headers["ETag"] = APP_VERSION_TIMESTAMP
+        elif request.url.path.endswith(".html") or request.url.path in ["/", "/inference", "/training", "/models", "/datasets", "/annotation", "/solutions"]:
+            # HTML页面不缓存
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+        
+        return response
+
+# 添加缓存控制中间件
+app.add_middleware(CacheControlMiddleware)
 
 # CORS 中间件
 app.add_middleware(
@@ -53,49 +79,64 @@ app.include_router(router, prefix="/api/v1", tags=["API"])
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
     """首页"""
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse("index.html", {
+        "request": request, 
+        "version": APP_VERSION_TIMESTAMP
+    })
 
 
 @app.get("/inference", response_class=HTMLResponse)
 async def inference_page(request: Request):
     """推理页面"""
-    return templates.TemplateResponse("inference.html", {"request": request})
+    return templates.TemplateResponse("inference.html", {
+        "request": request,
+        "version": APP_VERSION_TIMESTAMP
+    })
 
 
 @app.get("/training", response_class=HTMLResponse)
 async def training_page(request: Request):
     """训练页面"""
-    return templates.TemplateResponse("training.html", {"request": request})
+    return templates.TemplateResponse("training.html", {
+        "request": request,
+        "version": APP_VERSION_TIMESTAMP
+    })
 
 
 @app.get("/models", response_class=HTMLResponse)
 async def models_page(request: Request):
     """模型管理页面"""
-    return templates.TemplateResponse("models.html", {"request": request})
+    return templates.TemplateResponse("models.html", {
+        "request": request,
+        "version": APP_VERSION_TIMESTAMP
+    })
 
 
 @app.get("/datasets", response_class=HTMLResponse)
 async def datasets_page(request: Request):
     """数据集管理页面"""
-    return templates.TemplateResponse("datasets.html", {"request": request})
-
-
-@app.get("/labelstudio", response_class=HTMLResponse)
-async def labelstudio_page(request: Request):
-    """Label Studio 集成页面"""
-    return templates.TemplateResponse("labelstudio.html", {"request": request})
+    return templates.TemplateResponse("datasets.html", {
+        "request": request,
+        "version": APP_VERSION_TIMESTAMP
+    })
 
 
 @app.get("/annotation", response_class=HTMLResponse)
 async def annotation_page(request: Request):
     """本地数据标注页面"""
-    return templates.TemplateResponse("annotation.html", {"request": request})
+    return templates.TemplateResponse("annotation.html", {
+        "request": request,
+        "version": APP_VERSION_TIMESTAMP
+    })
 
 
 @app.get("/solutions", response_class=HTMLResponse)
 async def solutions_page(request: Request):
     """Ultralytics Solutions 页面"""
-    return templates.TemplateResponse("solutions.html", {"request": request})
+    return templates.TemplateResponse("solutions.html", {
+        "request": request,
+        "version": APP_VERSION_TIMESTAMP
+    })
 
 
 if __name__ == "__main__":
