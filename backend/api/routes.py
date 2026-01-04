@@ -428,19 +428,71 @@ async def auto_annotate_project(
     project_id: str,
     model_name: Optional[str] = Form("yolov8n.pt"),
     confidence: float = Form(0.25),
-    iou_threshold: float = Form(0.45)
+    iou_threshold: float = Form(0.45),
+    filter_classes: Optional[str] = Form(None),
+    merge_mode: str = Form("replace")
 ):
-    """使用YOLO模型自动标注项目"""
+    """使用YOLO模型自动标注项目 (增强版)"""
     try:
+        # 解析类别过滤
+        filter_classes_list = None
+        if filter_classes:
+            import json
+            filter_classes_list = json.loads(filter_classes)
+        
         result = annotation_service.auto_annotate_with_model(
             project_id=project_id,
             model_path=str(settings.MODELS_DIR / model_name),
             confidence=confidence,
-            iou_threshold=iou_threshold
+            iou_threshold=iou_threshold,
+            filter_classes=filter_classes_list,
+            merge_mode=merge_mode
         )
         if not result["success"]:
             raise HTTPException(status_code=500, detail=result["message"])
         return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/annotation/batch-annotate/{project_id}")
+async def batch_auto_annotate(
+    project_id: str,
+    data: dict
+):
+    """批量自动标注指定图片"""
+    try:
+        image_names = data.get("image_names", [])
+        model_name = data.get("model_name", "yolov8n.pt")
+        confidence = data.get("confidence", 0.25)
+        iou_threshold = data.get("iou_threshold", 0.45)
+        
+        if not image_names:
+            raise HTTPException(status_code=400, detail="image_names is required")
+        
+        result = annotation_service.batch_auto_annotate(
+            project_id=project_id,
+            image_names=image_names,
+            model_path=str(settings.MODELS_DIR / model_name),
+            confidence=confidence,
+            iou_threshold=iou_threshold
+        )
+        
+        if not result["success"]:
+            raise HTTPException(status_code=500, detail=result["message"])
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/annotation/statistics/{project_id}")
+async def get_annotation_statistics(project_id: str):
+    """获取标注统计信息"""
+    try:
+        stats = annotation_service.get_annotation_statistics(project_id)
+        if not stats.get("success", False):
+            raise HTTPException(status_code=404, detail=stats.get("message", "Project not found"))
+        return stats
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
